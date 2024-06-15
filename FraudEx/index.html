@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudEx</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">FraudEx</a>
+           
+        </div>
+    </nav>
+    <div class="buttons-container">
+       <button class="huge-button" id="user-button">User</button>
+        <button class="huge-button" id="banker-button">Banker</button>
+    </div>
+    <footer>
+        <div class="footer-container">
+            
+                <p><center>&copy; 2024 FraudEx. All rights reserved.</center></p>
+        </div>
+    </footer>
+    <script>
+                document.getElementById('user-button').addEventListener('click', function() {
+    window.location.href = 'user.html'; // Change to the URL of the User page
+});
+
+document.getElementById('banker-button').addEventListener('click', function() {
+    window.location.href = 'banker.html'; // Change to the URL of the Banker page
+});
+
+    </script>
+</body>
+
+</html>
