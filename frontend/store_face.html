@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Face</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        #video {
+            border: 2px solid #000;
+        }
+
+        .button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Store Face</h2>
+        <div class="video-container">
+            <video id="video" width="640" height="480" autoplay></video>
+            <button id="capture" class="button">Capture Photo</button>
+        </div>
+        <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+        <input type="text" id="userId" placeholder="Enter User ID"
+            style="margin-top: 10px; padding: 8px; font-size: 16px;">
+        <button id="submit" class="button">Submit Photo</button>
+        <p id="message"></p>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const captureButton = document.getElementById('capture');
+            const submitButton = document.getElementById('submit');
+            const userIdInput = document.getElementById('userId');
+            const message = document.getElementById('message');
+
+            // Get access to the camera
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                    video.srcObject = stream;
+                    video.play();
+                });
+            }
+
+            // Capture photo
+            captureButton.addEventListener('click', () => {
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, 640, 480);
+                message.textContent = 'Photo captured!';
+                message.style.color = 'green';
+            });
+
+            // Submit photo
+            submitButton.addEventListener('click', () => {
+                const dataURL = canvas.toDataURL('image/jpeg');
+                const base64Image = dataURL.split(',')[1];
+                const userId = userIdInput.value.trim();
+
+                if (!userId) {
+                    message.textContent = 'Please enter a valid User ID.';
+                    message.style.color = 'red';
+                    return;
+                }
+
+                fetch('http://127.0.0.1:5000/store_face', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: base64Image,
+                        user_id: userId
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            message.textContent = `Error: ${data.error}`;
+                            message.style.color = 'red';
+                        } else {
+                            message.textContent = 'Face stored successfully!';
+                            message.style.color = 'green';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        message.textContent = 'An error occurred. Please try again.';
+                        message.style.color = 'red';
+                    });
+            });
+        });
+    </script>
+</body>
+
+</html>

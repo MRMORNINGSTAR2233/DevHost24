@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Gateway</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="user.css">
+</head>
+
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">FraudEx</a>
+        </div>
+    </nav>
+
+    <div class="content">
+        <!-- Payment Form -->
+        <form class="payment-form" id="paymentForm">
+            <div class="form-container">
+                <h2>Payment Gateway</h2>
+                <label for="amount" class="form-label">Amount</label>
+                <input type="text" id="amount" name="amount" class="form-input">
+                <label for="user_id" class="form-label">User ID</label>
+                <input type="text" id="user_id" name="user_id" class="form-input">
+                <div class="payment-buttons">
+                    <button type="button" class="huge-button" id="card-button">Pay with Card</button>
+                    <button type="button" class="huge-button" id="bank-button">Pay with Bank</button>
+                </div>
+                <div class="back-link">
+                    <a href="index.html">Back to Home</a>
+                </div>
+            </div>
+        </form>
+
+        <!-- Transaction Processing Section -->
+        <div class="transaction-processing container">
+            <h2>Process Transaction</h2>
+            <div class="video-container">
+                <video id="video" width="640" height="480" autoplay></video>
+                <button id="capture" class="button">Capture and Process Transaction</button>
+            </div>
+            <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+            <p id="message"></p>
+        </div>
+    </div>
+
+    <!-- Include jQuery for AJAX functionality -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Function to handle form submission
+            $('#card-button').click(function () {
+                submitPayment('card');
+            });
+
+            $('#bank-button').click(function () {
+                submitPayment('bank');
+            });
+
+            function submitPayment(paymentType) {
+                // Get amount and user_id input values
+                var amount = $('#amount').val();
+                var userId = $('#user_id').val();
+
+                // Validate amount and user_id (you may want more robust validation)
+                if (amount === '' || isNaN(amount)) {
+                    alert('Please enter a valid amount.');
+                    return;
+                }
+                if (!userId) {
+                    alert('Please enter a valid User ID.');
+                    return;
+                }
+
+                // Access the device camera and stream to video element
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        const video = document.getElementById('video');
+                        video.srcObject = stream;
+                    })
+                    .catch(err => {
+                        console.error("Error accessing the camera: " + err);
+                    });
+
+                $('#capture').click(function () {
+                    // Create a canvas to capture the image from the video
+                    const canvas = document.getElementById('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const context = canvas.getContext('2d');
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const image = canvas.toDataURL('image/jpeg');
+
+                    // Remove the data URL prefix to get only base64 string
+                    const base64Image = image.split(',')[1];
+
+                    // Send captured image, user ID, and amount to server for transaction processing
+                    fetch('http://127.0.0.1:5000/process_transaction', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            image: base64Image,
+                            user_id: userId,
+                            amount: amount
+                        })
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok: ' + response.statusText);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            // Handle response from server
+                            if (data.authorized) {
+                                alert('Transaction authorized successfully!');
+                            } else {
+                                alert('Transaction not authorized. Please try again.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error processing transaction. Please try again later.');
+                        });
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
